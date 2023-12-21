@@ -24,4 +24,4 @@ HS (No Pre)= 56.06%
 HS (Pre)= 53.03%  
 HOG (No Pre)= 77.27%  
 HOG (Pre)= 80.30%  
-GLCM (No pre, Co pilot)= 10.606%  
+GLCM (No pre)= 10.606%  
