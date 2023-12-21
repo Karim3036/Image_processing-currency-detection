@@ -1,0 +1,264 @@
+from commonfunctions import *
+from Pre_Processing_Functions import *
+from skimage.transform import resize
+import os
+import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+import cv2
+%matplotlib inline
+%load_ext autoreload
+%autoreload 2
+
+
+#histogram equalization
+def equalize(image):
+    # Apply equalization to the image
+    return cv2.equalizeHist(image)
+
+def Histo_Equ_image(image):
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    return equalize(image)
+
+
+def erosion(binary_image, window_size):
+    height, width = binary_image.shape
+    half_window = window_size // 2
+    result_image = np.zeros_like(binary_image)
+
+    for i in range(half_window, height - half_window):
+        for j in range(half_window, width - half_window):
+            window = binary_image[i - half_window:i + half_window + 1, j - half_window:j + half_window + 1]
+            result_image[i, j] = np.min(window)
+
+    return result_image
+
+
+def dilation(binary_image, window_size):
+    height, width = binary_image.shape
+    half_window = window_size // 2
+    result_image = np.zeros_like(binary_image)
+
+    for i in range(half_window, height - half_window):
+        for j in range(half_window, width - half_window):
+            window = binary_image[i - half_window:i + half_window + 1, j - half_window:j + half_window + 1]
+            result_image[i, j] = np.max(window)
+
+    return result_image
+
+def invert_image(image):
+    # Invert the image
+    return 255 - image
+'''
+def Pre_Processing_Func(image_path):
+
+    # load the original image
+    image = cv2.imread(image_path)
+
+    Histo_Equ_After = Histo_Equ_image(image_path)
+
+    histo_inverted=invert_image(Histo_Equ_After)
+
+    histo_inverted=histo_inverted/255
+
+    binary_image=histo_inverted > 0.7
+
+    after_erosion=erosion(binary_image,3)
+
+    Opened_image=dilation(after_erosion,7)
+
+    return Opened_image
+    '''
+def process_image(image):
+    # Perform necessary image processing operations here
+    # load the original image
+
+
+    Histo_Equ_After = Histo_Equ_image(image)
+
+    histo_inverted=invert_image(Histo_Equ_After)
+
+    histo_inverted=histo_inverted/255
+
+    binary_image=histo_inverted > 0.7
+
+    hist, hist_centers = histogram(binary_image)
+
+    return hist
+
+
+
+def detect_and_describe(img):
+
+    img = np.array(img)[:, :, ::-1] # Convert PIL image to numpy array and reverse RGB channels (BGR -> RGB)
+
+    image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # Convert grayscale image to 8-bit unsigned integer (np.uint8) for SIFT algorithm
+
+    # Initialize SIFT
+    sift = cv2.SIFT_create(nfeatures=200)
+
+    # Detect keypoints and compute descriptors
+    keypoints, descriptors = sift.detectAndCompute(image,None)
+
+    return keypoints, descriptors
+
+#************************************************#
+#***********************MARC*********************#
+#************************************************#
+def hist_hsv(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Get the H channel
+    image1_h = hsv_image[:, :, 0]
+
+    # Get the S channel
+    image1_s = hsv_image[:, :, 1]
+
+    # Calculate the histograms for S, H, and V channels
+    hist_h = cv2.calcHist([image1_h], [0], None, [256], [0, 256])
+    hist_s = cv2.calcHist([image1_s], [0], None, [256], [0, 256])
+    hist_hs=cv2.calcHist([hsv_image[:,:,:1]],[0], None, [256], [0,256])
+
+
+    # Normalize the histograms
+    hist_h /= hist_h.sum()
+    hist_s /= hist_s.sum()
+    hist_hs /= hist_hs.sum()
+
+    return hist_h,hist_s,hist_hs
+
+
+def HoG(image):
+    # Resize the image to 130x276
+    resized_img = cv2.resize(image, (276, 130))
+    # print(resized_img.shape)
+
+    # Convert the original image to gray scale
+    resized_img_gray = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
+
+    # Specify the parameters for our HOG descriptor
+    win_size = (64, 128)  # You need to set a proper window size
+    block_size = (16, 16)
+    block_stride = (8, 8)
+    cell_size = (8, 8)
+    num_bins = 9
+
+    # Set the parameters of the HOG descriptor using the variables defined above
+    hog = cv2.HOGDescriptor(win_size, block_size, block_stride, cell_size, num_bins)
+
+    # Compute the HOG Descriptor for the gray scale image
+    hog_descriptor = hog.compute(resized_img_gray)
+    return hog_descriptor
+
+def Sift(train_image):
+  sift = cv2.SIFT_create(nfeatures=200)
+  # Convert the training image to RGB
+  training_image = cv2.cvtColor(train_image, cv2.COLOR_BGR2RGB)
+  # Convert the training image to gray scale
+  training_gray = cv2.cvtColor(training_image, cv2.COLOR_RGB2GRAY)
+  train_keypoints, train_descriptor = sift.detectAndCompute(training_gray, None)
+
+  return train_descriptor.flatten()
+
+def extract_sift_features(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    sift = cv2.SIFT_create()
+    keypoints, descriptors = sift.detectAndCompute(gray, None)
+    return descriptors[0].flatten() if descriptors is not None else np.array([])
+
+
+def get_pixel(img, center, x, y):
+  new_value = 0
+  try:
+    if img[x][y] >= center:
+      new_value = 1
+  except:
+    pass
+  return new_value
+
+def lbp_calculated_pixel(img, x, y):
+  center = img[x][y]
+  val_ar = []
+  val_ar.append(get_pixel(img, center, x-1, y-1))
+  val_ar.append(get_pixel(img, center, x-1, y))
+  val_ar.append(get_pixel(img, center, x-1, y + 1))
+  val_ar.append(get_pixel(img, center, x, y + 1))
+  val_ar.append(get_pixel(img, center, x + 1, y + 1))
+  val_ar.append(get_pixel(img, center, x + 1, y))
+  val_ar.append(get_pixel(img, center, x + 1, y-1))
+  val_ar.append(get_pixel(img, center, x, y-1))
+  power_val = [1, 2, 4, 8, 16, 32, 64, 128]
+  val = 0
+  for i in range(len(val_ar)):
+    val += val_ar[i] * power_val[i]
+  return val
+
+def LBP_matrix(img):
+  nimg = cv2.resize(img,(250,400))
+  height, width, _ = nimg.shape
+  img_gray = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
+  img_lbp = np.zeros((height, width), np.uint8)
+  for i in range(0, height):
+    for j in range(0, width):
+      img_lbp[i, j] = lbp_calculated_pixel(img_gray, i, j)
+  return img_lbp[0].flatten()
+
+# prepare data
+input_dir = 'C:/Users/Khaled/Desktop/Image project/New Data'
+categories = ['1EGP','5EGP','10EGP','20EGP','50EGP','100EGP','200EGP']
+
+data = []
+feature_1 = []
+feature_2 = []
+feature_3 = []
+feature_4 = []
+feature_5 = []
+feature_6 = []
+
+labels = []
+
+for category_idx, category in enumerate(categories):
+    for file in os.listdir(os.path.join(input_dir, category)):
+        img_path = os.path.join(input_dir, category, file)
+
+        img = io.imread(img_path)
+        # Convert the image to HSV color space
+        #hist_h, hist_s, hist_hs=hist_hsv(img)
+        HOG_class=HoG(img)
+
+        feature_4.append(HOG_class.flatten())
+
+        labels.append(category_idx)
+
+
+data=np.asarray(feature_4)
+
+labels = np.asarray(labels)
+
+
+# train / test split
+x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, shuffle=True, stratify=labels)
+
+# train classifier
+classifier = SVC()
+#classifier.fit(x_train,y_train)
+parameters = [{'gamma': [0.01, 0.001, 0.0001], 'C': [1, 10, 100, 1000]}]
+
+grid_search = GridSearchCV(classifier, parameters)
+
+grid_search.fit(x_train, y_train)
+
+# test performance
+best_estimator = grid_search.best_estimator_
+
+y_prediction = best_estimator.predict(x_test)
+
+score = accuracy_score(y_prediction, y_test)
+
+print('{}% of samples were correctly classified'.format(str(score * 100)))
+
+pickle.dump(best_estimator, open('./model.p', 'wb'))
