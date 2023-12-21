@@ -1,7 +1,7 @@
 # Image_processing-currency-detection
 
 ## SVM results 
-**full dataset**
+**full dataset**  
 #SIFT alone = 32%
 #HOG alone = 77%
 #HOG+H+S+HS= 86%
@@ -9,7 +9,7 @@
 #H+HS+S+HOG+LBP=31%
 #HOG+H+S+HS(with process_image)=80.2%
 
-**33 imgs in dataset**
+**33 imgs in dataset**  
 H,S,HS,HOG (with pre-processing)=77.2%
 H,S,HS,HOG (NO pre-processing)=74.2%
 
