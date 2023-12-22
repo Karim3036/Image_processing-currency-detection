@@ -6,8 +6,8 @@ import numpy as np
 from skimage.feature import hog
 import pickle
 
-classes=['1EGP', '5EGP','10EGP','20EGP','50EGP','100EGP','200EGP']
-with open("model_EGP.p", "rb") as model_file:
+classes=['1EGP','1SAR', '5EGP','5SAR','10EGP','10SAR','20EGP','50EGP','50SAR','100EGP','100SAR','200EGP','500SAR']
+with open("trained_models/model_fully.p", "rb") as model_file:
     model = pickle.load(model_file)
 
 def preprocess_image(img):
@@ -41,9 +41,10 @@ def HoG(image):
 class App(tk.Tk):
   def __init__(self):
     super().__init__()
-
+    self.Start_GUI()
+  def Start_GUI(self):
     # Load the background image
-    bg_image = Image.open(r"D:\College\Senior 2\Image Processing\Project\Old-world-map.jpg")
+    bg_image = Image.open("Assets/Background_Pic.jpg")
     bg_image = bg_image.resize((650, 500), Image.BICUBIC)
     self.bg_photo = ImageTk.PhotoImage(bg_image)
 
@@ -82,7 +83,7 @@ class App(tk.Tk):
     for widget in self.winfo_children():
       widget.destroy()
     # Load the background image
-    bg_image = Image.open(r"D:\College\Senior 2\Image Processing\Project\Old-world-map.jpg")
+    bg_image = Image.open("Assets/Background_Pic.jpg")
     bg_image = bg_image.resize((650, 500), Image.BICUBIC)
     self.bg_photo = ImageTk.PhotoImage(bg_image)
 
@@ -108,20 +109,24 @@ class App(tk.Tk):
     self.prediction_label.pack()
     self.prediction_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     # Add "Upload Another Image" button
-    self.btn_upload_another = tk.Button(self, text="Upload Another Image", command=self.reset_app)
+    self.btn_upload_another = tk.Button(self, text="Upload Another Image", command=self.reset_app,font=("Times New Roman", 16))
     self.btn_upload_another.pack(pady=10)
+    self.btn_upload_another.place(relx=0.3, rely=0.8, anchor=tk.CENTER)  # Place the button below the image label
+    # Create a button for currency conversion
+    self.btn_convert_currency = tk.Button(self, text="Convert Currency", command=self.convert_currency, font=("Times New Roman", 16))
+    self.btn_convert_currency.pack(pady=10)
+    self.btn_convert_currency.place(relx=0.7, rely=0.8, anchor=tk.CENTER)  # Place the button next to the "Upload Another Image" button
 
+  def convert_currency(self):
+    # Add your currency conversion logic here
+    pass
+
+  # Rest of the code...
   def reset_app(self):
-    self.destroy()  # Destroy the current app window
-    app = App()  # Create a new instance of the App class
-    app.mainloop()  # Start the new app
+    self.Start_GUI()
 
 if __name__ == "__main__":
   app = App()
   app.mainloop()
 
 
-
-if __name__ == "__main__":
-  app = App()
-  app.mainloop()
