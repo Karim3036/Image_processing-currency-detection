@@ -16,7 +16,7 @@ Choose the desired option for uploading you image
 6. The result of the conversion will now be displayed and again the user has the option to choose their next move either to repeat a previous procedure or to close the GUI   
 ![WhatsApp Image 2023-12-28 at 12 59 08 AM](https://github.com/Karim3036/Image_processing-currency-detection/assets/98956384/683b19ca-1612-425c-9987-db9799bb7989)  
 
-**Note:** to run in code check [trained_models](https://github.com/Karim3036/Image_processing-currency-detection/tree/main/trained_models)
+**Note:** to run in code check Testing_Full.ipynb in [trained_models](https://github.com/Karim3036/Image_processing-currency-detection/blob/main/trained_models)
 
 **Pre-Requesits:** "needed to run most files so make sure they exist before running the program"
 * commonfunctions.py
