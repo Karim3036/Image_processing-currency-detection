@@ -269,6 +269,10 @@ class App(tk.Tk):
         # Create a label with the background image and place it at the bottom
       bg_label = tk.Label(self, image=self.bg_photo)
       bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+      #if width > height rotate 90 degrees counterclockwise
+      if self.image.size[0] < self.image.size[1]:
+        orientation = "vertical"
+        self.image = self.image.transpose(Image.ROTATE_90)
       self.image = self.image.resize((224, 224))
       img_array = np.array(self.image)
       hog_image=img_pre_processing(img_array)
